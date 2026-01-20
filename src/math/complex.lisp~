@@ -1,0 +1,2 @@
+(defun absolute-square z
+  (expt z 2))
