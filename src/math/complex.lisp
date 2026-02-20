@@ -1,4 +1,5 @@
 ;These are helper functions for complex math :
+;blarg
 
 (defun absolute-square (z)
   (expt (abs z) 2))
