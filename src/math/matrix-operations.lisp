@@ -2,7 +2,6 @@
   (:use :cl)
   (:export
    *eps*
-
    ;; constructors
    make-matrix make-vector
    print-matrix identity-matrix copy-matrix
@@ -32,6 +31,12 @@
 
 (defun make-matrix (rows cols &optional (init 0))
   (make-array (list rows cols) :initial-element init))
+;; update element with (setf (aref M i j) value)
+;; M = matrix
+;; i = row index
+;; j = column index
+;; Indexing starts at 0.
+
 
 (defun make-vector (n &optional (init 0))
   (make-array n :initial-element init))
@@ -200,31 +205,85 @@
 (defun gauss-jordan (M)
   (let* ((rows (array-dimension M 0))
          (cols (array-dimension M 1))
-         (lead 0))
-    (dotimes (r rows M)
+         (lead 0)
+         (rank 0))
+
+    (dotimes (r rows)
+
+      ;; stop if we've exhausted columns
       (when (>= lead cols)
-        (return M))
-      (let ((pivot-row r)
+        (return))
+
+      ;; find pivot row
+      (let ((pivot-row nil)
             (max-val 0.0))
+
         (dotimes (k (- rows r))
           (let* ((ii (+ r k))
                  (val (abs (aref M ii lead))))
             (when (> val max-val)
               (setf max-val val
                     pivot-row ii))))
-        (if (<= max-val *eps*)
-            (progn (incf lead) (decf r))
+
+        ;; if no pivot exists in this column,
+        ;; move to next column and retry same row
+        (if (or (null pivot-row)
+                (<= max-val *eps*))
+
             (progn
+              (incf lead)
+              (decf r))
+
+            (progn
+
+              ;; swap pivot into place
               (when (/= pivot-row r)
                 (swap-rows M r pivot-row))
+
+              ;; normalize pivot row
               (let ((pivot (aref M r lead)))
+                (when (<= (abs pivot) *eps*)
+                  (error "Singular matrix"))
+
                 (scale-row M r (/ 1.0 pivot)))
+
+              ;; eliminate all other rows
               (dotimes (j rows)
                 (unless (= j r)
                   (let ((factor (aref M j lead)))
                     (when (> (abs factor) *eps*)
                       (add-rows M r j (- factor))))))
-              (incf lead)))))))
+
+              (incf rank)
+              (incf lead)))))
+
+    ;; detect inconsistent rows
+    ;;
+    ;; [0 0 0 | nonzero]
+    ;;
+    ;; means no solution exists
+    (dotimes (i rows)
+
+      (let ((all-zero t))
+
+        ;; check coefficient part only
+        (dotimes (j (1- cols))
+          (when (> (abs (aref M i j)) *eps*)
+            (setf all-zero nil)))
+
+        ;; inconsistent row
+        (when (and all-zero
+                   (> (abs (aref M i (1- cols))) *eps*))
+          (error "Inconsistent system: no solution"))))
+
+    ;; detect non-unique solutions
+    ;;
+    ;; rank < number of variables
+    ;;
+    (when (< rank (1- cols))
+      (error "Singular or underdetermined system"))
+
+    M))
 
 (defun solve-system (A b)
   (let* ((rows (array-dimension A 0))
