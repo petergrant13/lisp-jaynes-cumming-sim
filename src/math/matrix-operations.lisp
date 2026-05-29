@@ -50,6 +50,25 @@
         (setf (aref B i j) (aref A i j))))
     B))
 
+(defun augment-matrix (A b)
+  (let* ((rows (array-dimension A 0))
+         (cols (array-dimension A 1))
+         (aug (make-array (list rows (1+ cols))
+                          :initial-element 0.0)))
+
+    ;; copy A
+    (dotimes (i rows)
+      (dotimes (j cols)
+        (setf (aref aug i j)
+              (aref A i j))))
+
+    ;; copy b into last column
+    (dotimes (i rows)
+      (setf (aref aug i cols)
+            (aref b i)))
+
+    aug))
+
 (defun print-matrix (M)
   (dotimes (i (array-dimension M 0))
     (dotimes (j (array-dimension M 1))

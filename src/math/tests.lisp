@@ -1,5 +1,6 @@
 ;; This file has a bunch of unit tests for the matrix operations code
 
+;; This checks if values are equal or not
 (defun assert-near (a b &optional (eps 1e-8))
   (unless (< (abs (- a b)) eps)
     (error "Assertion failed: ~A != ~A" a b)))
@@ -14,6 +15,7 @@
      (,condition-type (c)
        t)))
 
+;; check if two matrices are equal
 (defun matrix-equal-near (A B &optional (eps 1e-12))
   (let ((rows (array-dimension A 0))
         (cols (array-dimension A 1)))
@@ -29,12 +31,17 @@
           (return-from matrix-equal-near nil))))))
 
 (defun test-gauss-jordan-identity ()
-  (let ((A (identity-matrix 3)))
-    (gauss-jordan A)
-    (unless (matrix-equal-near A (identity-matrix 3))
-      (error "Identity matrix test failed")))
+  (let* ((A (identity-matrix 3))
+        (b (make-vector 3))
+        (Ab (augment-matrix A b)))
+    (gauss-jordan Ab)
+
+  (unless (matrix-equal-near Ab (augment-matrix A b))
+           (error "Identity matrix test failed")))
+
+  (format t "Gauss-Jordan identity passed.~%"))
   
-  (format t "Identity test passed.~%"))
+  
 
 (defun test-solve-system ()
   (let ((A (make-matrix 2 2 0.0))
